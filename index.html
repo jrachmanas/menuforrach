@@ -377,17 +377,17 @@ const DAYS_FULL = ['Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis',
 // index: 0=Mon … 6=Sun
 const DATA = {
   julius: {
-    breakfast:    ['Košė','Košė','Kaiušiniai','Jogurtas+','Varškė','Jogurtas+','Kaiušiniai'],
+    breakfast:    ['Jogurtas+','Jogurtas+','Kaiušiniai','Jogurtas+','Varškė','Jogurtas+','Kaiušiniai'],
     morningSnack: ['Vaisiai','PicNic','Vaisiai','Kumpis','Vaisiai','Picnic','Kumpis'],
-    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Salotos','Sriuba','Troškinys'],
+    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Kepta žuvis','Sriuba','Troškinys'],
     snack:        ['Belvita','Varškė','Belvita','Varškė','Vais. ir riešutai','Belvita','Vais. ir riešutai'],
-    dinner:       ['Sumuštiniai','Salotos','Varškė','Sumuštiniai','Salotos','Salotos','Sumuštiniai'],
+    dinner:       ['Sumuštiniai','Salotos','Varškė',null,'Vynas ir snack','Salotos','Sumuštiniai'],
     eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
   },
   margo: {
-    breakfast:    ['Košė','Košė','Kiaušiniai','Sumuštiniai','Varškė','Jogurtas+','Kiaušiniai'],
+    breakfast:    ['Jogurtas+','Jogurtas+','Kiaušiniai','Jogurtas+','Varškė','Jogurtas+','Kiaušiniai'],
     morningSnack: null,
-    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Salotos','Sriuba','Troškinys'],
+    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Kepta žuvis','Sriuba','Troškinys'],
     snack:        ['Kumpis','Vaškė','Sūris','G. varškė','2 jogurtukai','Kumpis','G. varškė'],
     dinner:       ['Sumuštiniai','Salotos','Varškė','Sumuštiniai','Vynas ir snack','Salotos','Sumuštiniai'],
     eveningSnack: null,
@@ -398,7 +398,7 @@ const DATA = {
     snackII:      ['Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.',null,null],
     lunch:        [null,null,null,null,null,'Sriuba','Troškinys'],
     snack:        ['Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Belvita','Vais. ir riešutai'],
-    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Slts','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
+    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Salotos','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
     eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
   },
   tabita: {
@@ -407,7 +407,7 @@ const DATA = {
     snackII:      null,
     lunch:        [null,null,null,null,null,'Sriuba','Troškinys'],
     snack:        ['Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Kumpis','G. varškė'],
-    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Slts','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
+    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Salotos','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
     eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
   },
 };
@@ -656,11 +656,11 @@ const INGR = {
   // Mon: Vištiena
   lunch_vistiena_julius: {
     items:[
-      {amount:'200g',      name:'vištienos filė (pagaminto produkto)'},
-      {amount:'40g',       name:'grikiai arba perlinės kruopos (nevirtų)'},
-      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
-      {amount:'100g',      name:'agurkas'},
-      {amount:'200g',      name:'pomidoras'},
+      {amount:'100g',      name:'vištienos filė (pagaminto produkto)'},
+      {amount:'20g',       name:'grikiai arba perlinės kruopos (nevirtų)'},
+      {amount:'8g (½ š.)', name:'alyvuogių aliejus'},
+      {amount:'50g',       name:'agurkas'},
+      {amount:'100g',      name:'pomidoras'},
     ],
     note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis.'
   },
@@ -677,10 +677,10 @@ const INGR = {
   // Tue: Sriuba
   lunch_sriuba_julius: {
     items:[
-      {amount:'300ml',  name:'sriuba (virta daržovių, kopūstienė, burokėlių – be apkeptų produktų)'},
-      {amount:'100g',   name:'pomidoras arba agurkas'},
-      {amount:'1 riekė',name:'juoda duona'},
-      {amount:'120g',   name:'baltos žuvies filė arba virtas jautienos kumpis arba virta vištiena (pagaminto produkto)'},
+      {amount:'150ml',     name:'sriuba (virta daržovių, kopūstienė, burokėlių – be apkeptų produktų)'},
+      {amount:'50g',       name:'pomidoras arba agurkas'},
+      {amount:'½ riekės',  name:'juoda duona'},
+      {amount:'60g',       name:'baltos žuvies filė arba virtas jautienos kumpis arba virta vištiena (pagaminto produkto)'},
     ],
     note: 'Mėsą galite gamintis atskirai arba įsidėti į pačią sriubą.'
   },
@@ -697,12 +697,12 @@ const INGR = {
   // Wed: Troškinys
   lunch_troskinys_julius: {
     items:[
-      {amount:'150g',       name:'jautienos arba kiaulienos kumpis be odos (pagaminto produkto)'},
-      {amount:'30g',        name:'rudieji ryžiai arba perlinės kruopos (nevirtų)'},
-      {amount:'300g',       name:'daržovės: pievagrybiai, pomidorai, paprikos, cukinijos, brokoliai, žiediniai kopūstai'},
-      {amount:'40g',        name:'pomidorų pasta'},
-      {amount:'2 vnt',      name:'sultinio kubeliai'},
-      {amount:'10g (1 a.š.)',name:'alyvuogių aliejus'},
+      {amount:'75g',         name:'jautienos arba kiaulienos kumpis be odos (pagaminto produkto)'},
+      {amount:'15g',         name:'rudieji ryžiai arba perlinės kruopos (nevirtų)'},
+      {amount:'150g',        name:'daržovės: pievagrybiai, pomidorai, paprikos, cukinijos, brokoliai, žiediniai kopūstai'},
+      {amount:'20g',         name:'pomidorų pasta'},
+      {amount:'1 vnt',       name:'sultinio kubelis'},
+      {amount:'5g (½ a.š.)', name:'alyvuogių aliejus'},
     ],
     note: 'Gaminame troškinį iš daržovių bei jautienos kumpio. Gardiname norimais prieskoniais. Paduodame su virtais rudaisiais ryžiais arba perlinėmis, grikių, avižų kruopomis. Pačias kruopas galite įmaišyti į troškinį irgi.'
   },
@@ -721,11 +721,11 @@ const INGR = {
   // Thu: Mėsos patiekalas
   lunch_mesos_julius: {
     items:[
-      {amount:'200g',      name:'vištienos šlaunelės/blauzdelės (pagaminto produkto)'},
-      {amount:'150g',      name:'bulvės virtos'},
-      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
-      {amount:'100g',      name:'agurkas'},
-      {amount:'200g',      name:'pomidoras'},
+      {amount:'100g',      name:'vištienos šlaunelės/blauzdelės (pagaminto produkto)'},
+      {amount:'75g',       name:'bulvės virtos'},
+      {amount:'8g (½ š.)', name:'alyvuogių aliejus'},
+      {amount:'50g',       name:'agurkas'},
+      {amount:'100g',      name:'pomidoras'},
     ],
     note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis. Užkepkite mėsą su sūrio plutele.'
   },
@@ -738,6 +738,28 @@ const INGR = {
       {amount:'200g',      name:'pomidoras'},
     ],
     note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis. Užkepkite mėsą su sūrio plutele.'
+  },
+
+  // Fri: Kepta žuvis su salotomis
+  lunch_zuvis_julius: {
+    items:[
+      {amount:'130g',      name:'baltos žuvies filė (menkė, pollaka arba tilapija)'},
+      {amount:'8g (½ š.)', name:'alyvuogių aliejus (kepimui)'},
+      {amount:'150g',      name:'mišrios salotos (agurkas, pomidoras, salotos lapai)'},
+      {amount:'8g (½ š.)', name:'alyvuogių aliejus (salotoms)'},
+      {amount:'½ vnt.',    name:'citrina (sultys apšlakstymui)'},
+    ],
+    note: 'Žuvies filė pagardinkite druska, pipirais ir česnakų milteliais. Kepkite orkaitėje 200°C 15–18 min arba keptuvėje ant vidutinės ugnies po 3–4 min iš kiekvienos pusės. Salotas apšlakstykite citrinų sultimis ir aliejumi. ~270 kcal.'
+  },
+  lunch_zuvis_margo: {
+    items:[
+      {amount:'100g',      name:'baltos žuvies filė (menkė, pollaka arba tilapija)'},
+      {amount:'5g (⅓ š.)', name:'alyvuogių aliejus (kepimui)'},
+      {amount:'200g',      name:'mišrios salotos (agurkas, pomidoras, salotos lapai)'},
+      {amount:'8g (½ š.)', name:'alyvuogių aliejus (salotoms)'},
+      {amount:'½ vnt.',    name:'citrina (sultys apšlakstymui)'},
+    ],
+    note: 'Žuvies filė pagardinkite druska, pipirais ir česnakų milteliais. Kepkite orkaitėje 200°C 15–18 min arba keptuvėje ant vidutinės ugnies po 3–4 min iš kiekvienos pusės. Salotas apšlakstykite citrinų sultimis ir aliejumi. ~210 kcal.'
   },
 };
 
@@ -911,7 +933,7 @@ function dinnerIngr(val, person) {
   }
   if (val === 'Salotos' || val === 'Slts') return {i: DINNER_INGR.salotos.items, n: null};
   if (val === 'Salotos+FRI') return {i: [...DINNER_INGR.salotos.items, ...DINNER_INGR.salotos_fri.items], n: null};
-  if (val === 'Nuggets+Slts') return {i: [...DINNER_INGR.nuggets.items, ...DINNER_INGR.salotos.items], n: null};
+  if (val === 'Nuggets+Salotos') return {i: [...DINNER_INGR.nuggets.items, ...DINNER_INGR.salotos.items], n: null};
   return {i:[], n:null};
 }
 
@@ -1045,6 +1067,7 @@ function renderMenu() {
         if (val === 'Sriuba')     return {i: p ? INGR.lunch_sriuba_julius.items   : INGR.lunch_sriuba_margo.items,   n: INGR.lunch_sriuba_julius.note};
         if (val === 'Troškinys')  return {i: p ? INGR.lunch_troskinys_julius.items: INGR.lunch_troskinys_margo.items,n: p ? INGR.lunch_troskinys_julius.note : INGR.lunch_troskinys_margo.note};
         if (val === 'Mėsos pat.') return {i: p ? INGR.lunch_mesos_julius.items    : INGR.lunch_mesos_margo.items,   n: INGR.lunch_mesos_julius.note};
+        if (val === 'Kepta žuvis') return {i: p ? INGR.lunch_zuvis_julius.items : INGR.lunch_zuvis_margo.items, n: p ? INGR.lunch_zuvis_julius.note : INGR.lunch_zuvis_margo.note};
         if (val === 'Salotos') return {i: DINNER_INGR.salotos.items, n: null};
         return {i:[], n:null};
       }
@@ -1079,7 +1102,7 @@ function renderMenu() {
       function dp(val, person) { const r = dinnerIngr(val, person); return {ingredients:r.i, note:r.n}; }
       return card({ type:'dinner', icon:'🌙', label:'Vakarienė', persons:[
         {name:'Julius',  value: J.dinner[di], ...dp(J.dinner[di], 'julius')},
-        {name:'Margo',   value: M.dinner[di], ...dp(M.dinner[di], 'margo')},
+        {name:'Margo',   value: M.dinner[di], ...dp(M.dinner[di], di === 3 ? 'emanuel' : 'margo')},
         {name:'Emanuel', value: E.dinner[di], ...dp(E.dinner[di], 'emanuel')},
         {name:'Tabita',  value: T.dinner[di], ...dp(T.dinner[di], 'tabita')},
       ]});
