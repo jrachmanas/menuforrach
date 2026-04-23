@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Šeimos Meniu</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #faf7f2;
+      --card: #ffffff;
+      --ink: #1a1612;
+      --muted: #8a8278;
+      --accent: #c8773a;
+      --accent-light: #f5e8d8;
+      --green: #4a7c59;
+      --green-light: #e4ede7;
+      --border: #e8e2d9;
+      --shadow: 0 2px 12px rgba(26,22,18,0.07);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    header {
+      background: var(--ink);
+      color: #fff;
+      padding: 28px 24px 22px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+    #today-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .week-strip {
+      display: flex;
+      gap: 8px;
+      padding: 14px 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .week-strip::-webkit-scrollbar { display: none; }
+
+    .day-chip {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 16px;
+      border-radius: 50px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: transparent;
+      transition: all .18s ease;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .day-chip .abbr {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .day-chip .num {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .day-chip:hover { background: var(--accent-light); }
+    .day-chip.active { background: var(--ink); border-color: var(--ink); }
+    .day-chip.active .abbr,
+    .day-chip.active .num { color: #fff; }
+    .day-chip.is-today { border-color: var(--accent); }
+    .day-chip.is-today .abbr { color: var(--accent); font-weight: 700; }
+    .day-chip.active.is-today { background: var(--accent); border-color: var(--accent); }
+    .day-chip.active.is-today .abbr,
+    .day-chip.active.is-today .num { color: #fff; }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    .day-heading {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 18px;
+      padding-left: 2px;
+    }
+
+    .group-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+
+    .meal-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s;
+    }
+    .meal-card:hover { box-shadow: 0 4px 20px rgba(26,22,18,0.1); }
+
+    .meal-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .meal-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .meal-time { flex: 1; min-width: 0; }
+    .meal-time strong { display: block; font-size: 0.88rem; font-weight: 600; }
+    .meal-preview {
+      font-size: 0.78rem; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .opt-badge {
+      font-size: 0.68rem; font-weight: 400; color: var(--muted);
+      margin-left: 6px;
+    }
+    .chevron {
+      font-size: 0.7rem; color: var(--muted);
+      transition: transform .22s ease; flex-shrink: 0;
+    }
+    .meal-card.open .chevron { transform: rotate(180deg); }
+
+    .meal-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+    .meal-card.open .meal-body { max-height: 900px; }
+
+    .meal-body-inner {
+      padding: 0 16px 14px;
+      border-top: 1px solid var(--border);
+    }
+    .person-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+    }
+    .person-row:last-child { border-bottom: none; }
+    .person-tag {
+      width: 68px; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); flex-shrink: 0;
+    }
+    .person-food { font-size: 0.9rem; font-weight: 500; }
+    .person-food.empty { color: var(--muted); font-style: italic; font-weight: 400; }
+
+    .ingredients {
+      margin-top: 6px; padding: 8px 10px;
+      background: var(--bg); border-radius: 8px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .ingredient-item {
+      font-size: 0.78rem; color: var(--muted);
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .ingredient-item::before { content: "·"; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .ingredient-amount { font-weight: 600; color: var(--ink); min-width: 52px; }
+    .ingredient-note {
+      margin-top: 5px; padding-top: 5px;
+      border-top: 1px dashed var(--border);
+      font-size: 0.73rem; color: var(--muted); font-style: italic;
+    }
+
+    .type-breakfast .meal-icon { background: #fef3c7; }
+    .type-snack     .meal-icon { background: #dbeafe; }
+    .type-lunch     .meal-icon { background: var(--green-light); }
+    .type-dinner    .meal-icon { background: #fce7f3; }
+    .type-optional  .meal-icon { background: #f3e8ff; }
+
+
+
+    @media (max-width: 480px) {
+      header { padding: 18px 16px 14px; }
+      header h1 { font-size: 1.25rem; }
+    }
+
+  /* ── Login overlay ──────────────────────────────────────────────────────── */
+  #login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #login-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+  #login-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+  }
+  #login-card > p {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  #login-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+    transition: border-color .18s;
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+  #login-input:focus { border-color: var(--accent); }
+  #login-input.error { border-color: #c0392b; }
+  #login-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .18s;
+  }
+  #login-btn:hover { opacity: 0.88; }
+  #login-error {
+    font-size: 0.82rem;
+    color: #c0392b;
+    min-height: 1.2em;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-7px); }
+    40%      { transform: translateX(7px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+  .shake { animation: shake .35s ease; }
+
+  #logout-btn {
+    display: block;
+    margin: 32px auto 0;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 0.6;
+  }
+  #logout-btn:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div id="login-card">
+    <h2>🍽 Šeimos Meniu</h2>
+    <p>Įveskite slaptažodį</p>
+    <input type="password" id="login-input" placeholder="slaptažodis" autocomplete="current-password"/>
+    <button id="login-btn">Prisijungti</button>
+    <p id="login-error"></p>
+  </div>
+</div>
+
+<header>
+  <h1>🍽 Šeimos Meniu</h1>
+  <span id="today-label"></span>
+</header>
+
+<div class="week-strip" id="week-strip"></div>
+
+<main>
+  <p class="day-heading" id="day-heading"></p>
+  <div id="menu-area"></div>
+</main>
+
+<button id="logout-btn" onclick="logout()">Atsijungti</button>
+
+<script>
+// ── Auth ─────────────────────────────────────────────────────────────────────
+const PASSWORD = 'seima';   // <-- change this to your family password
+const AUTH_KEY = 'menu_auth_v1';
+
+(function initAuth() {
+  if (localStorage.getItem(AUTH_KEY) === 'ok') {
+    document.getElementById('login-overlay').style.display = 'none';
+    return;
+  }
+  document.getElementById('login-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tryLogin();
+  });
+  document.getElementById('login-btn').addEventListener('click', tryLogin);
+})();
+
+function tryLogin() {
+  var input = document.getElementById('login-input');
+  if (input.value === PASSWORD) {
+    localStorage.setItem(AUTH_KEY, 'ok');
+    document.getElementById('login-overlay').style.display = 'none';
+  } else {
+    input.classList.remove('shake', 'error');
+    void input.offsetWidth;
+    input.classList.add('shake', 'error');
+    document.getElementById('login-error').textContent = 'Neteisingas slaptažodis :(';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  location.reload();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+const DAYS_LT   = ['Pr.','An.','Tr.','Kt.','Pt.','St.','Sk.'];
+const DAYS_FULL = ['Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis','Penktadienis','Šeštadienis','Sekmadienis'];
+
+// index: 0=Mon … 6=Sun
+const DATA = {
+  julius: {
+    breakfast:    ['Košė','Košė','Kaiušiniai','Jogurtas+','Varškė','Jogurtas+','Kaiušiniai'],
+    morningSnack: ['Vaisiai','PicNic','Vaisiai','Kumpis','Vaisiai','Picnic','Kumpis'],
+    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Salotos','Sriuba','Troškinys'],
+    snack:        ['Belvita','Varškė','Belvita','Varškė','Vais. ir riešutai','Belvita','Vais. ir riešutai'],
+    dinner:       ['Sumuštiniai','Salotos','Varškė','Sumuštiniai','Salotos','Salotos','Sumuštiniai'],
+    eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
+  },
+  margo: {
+    breakfast:    ['Košė','Košė','Kiaušiniai','Sumuštiniai','Varškė','Jogurtas+','Kiaušiniai'],
+    morningSnack: null,
+    lunch:        ['Vištiena','Sriuba','Troškinys','Mėsos pat.','Salotos','Sriuba','Troškinys'],
+    snack:        ['Kumpis','Vaškė','Sūris','G. varškė','2 jogurtukai','Kumpis','G. varškė'],
+    dinner:       ['Sumuštiniai','Salotos','Varškė','Sumuštiniai','Vynas ir snack','Salotos','Sumuštiniai'],
+    eveningSnack: null,
+  },
+  emanuel: {
+    breakfast:    ['Sausi p.','Sausi p.','Kaiušiniai','Sausi p.','Sausi p.','Jogurtas+','Kaiušiniai'],
+    snackI:       ['P&J sandwitch','Cheese','P&J sandwitch','Cheese','P&J sandwitch','Picnic','Kumpis'],
+    snackII:      ['Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.','Berr./Fru./Veg.',null,null],
+    lunch:        [null,null,null,null,null,'Sriuba','Troškinys'],
+    snack:        ['Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Belvita','Vais. ir riešutai'],
+    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Slts','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
+    eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
+  },
+  tabita: {
+    breakfast:    ['Sausi p.','Sausi p.','Kiaušiniai','Sausi p.','Sausi p.','Jogurtas+','Kiaušiniai'],
+    snackI:       null,
+    snackII:      null,
+    lunch:        [null,null,null,null,null,'Sriuba','Troškinys'],
+    snack:        ['Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Vaisiu+Surelis','Belvita+Banana','Kumpis','G. varškė'],
+    dinner:       ['Sumuštiniai','Salotos+FRI','Nuggets+Slts','Sumuštiniai','Snacks rinkinys','Salotos','Sumuštiniai'],
+    eveningSnack: ['Kumpis','Jogurtas','Riešutai','Kumpis','Jogurtas','Riešutai','Jogurtas'],
+  },
+};
+
+let selected = new Date();
+
+function isoDate(d) { return d.toISOString().slice(0,10); }
+
+function getMonday(d) {
+  const day = new Date(d);
+  const wd = day.getDay();
+  day.setDate(day.getDate() - (wd === 0 ? 6 : wd - 1));
+  return day;
+}
+
+function dayIdx(d) {
+  const wd = d.getDay();
+  return wd === 0 ? 6 : wd - 1;
+}
+
+// ── Week strip ──────────────────────────────────────────────────────────────
+function buildStrip() {
+  const strip = document.getElementById('week-strip');
+  strip.innerHTML = '';
+  const mon = getMonday(selected);
+  const today = isoDate(new Date());
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    const ds = isoDate(d);
+
+    const btn = document.createElement('button');
+    btn.className = 'day-chip';
+    if (ds === today) btn.classList.add('is-today');
+    if (ds === isoDate(selected)) btn.classList.add('active');
+
+    btn.innerHTML = `<span class="abbr">${DAYS_LT[i]}</span>`;
+    btn.addEventListener('click', () => { selected = new Date(d); buildStrip(); renderMenu(); });
+    strip.appendChild(btn);
+  }
+}
+
+// ── Card builder ────────────────────────────────────────────────────────────
+function card({ type, icon, label, optional, persons }) {
+  const rows = persons.filter(p => p.value != null);
+  if (rows.length === 0) return '';
+  const hasReal = rows.some(p => p.value && p.value !== '-');
+  if (!hasReal && optional) return '';
+
+  const preview = rows.map(p => (p.value && p.value !== '-') ? p.value : '—').join(' · ');
+
+  return `
+    <div class="meal-card type-${type}">
+      <div class="meal-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="meal-icon">${icon}</div>
+        <div class="meal-time">
+          <strong>${label}${optional ? '<span class="opt-badge">(neprivaloma)</span>' : ''}</strong>
+          <div class="meal-preview">${preview}</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="meal-body">
+        <div class="meal-body-inner">
+          ${rows.map(p => {
+            const hasFood = p.value && p.value !== '-';
+            const ingr = p.ingredients || [];
+            return `
+            <div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+              <div style="display:flex;align-items:center;gap:12px;width:100%">
+                <span class="person-tag">${p.name}</span>
+                <span class="person-food${hasFood ? '' : ' empty'}">${hasFood ? p.value : '—'}</span>
+              </div>
+              ${ingr.length ? `<div class="ingredients">
+                ${ingr.map(i => `<div class="ingredient-item"><span class="ingredient-amount">${i.amount}</span><span>${i.name}</span></div>`).join('')}
+                ${p.note ? `<div class="ingredient-note">${p.note}</div>` : ''}
+              </div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Lunchbox card (Emanuel only: snackI + snackII) ───────────────────────────
+function lunchboxIngr(val) {
+  if (!val) return [];
+  if (val.startsWith('P&J')) return INGR.lunchbox_pj.items;
+  if (val.startsWith('Berr') || val.startsWith('Veg')) return INGR.lunchbox_berr.items;
+  if (val === 'Cheese') return INGR.lunchbox_cheese.items;
+  return [];
+}
+
+function lunchboxCard({ di, E }) {
+  const s1 = E.snackI ? E.snackI[di] : null;
+  const s2 = E.snackII ? E.snackII[di] : null;
+  if (!s1 && !s2) return '';
+  const preview = [s1, s2].filter(Boolean).join(' + ');
+  function renderRow(label, val) {
+    if (!val) return '';
+    const ingr = lunchboxIngr(val);
+    return '<div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px;">'
+      + '<div style="display:flex;align-items:center;gap:12px;width:100%">'
+      + '<span class="person-tag">' + label + '</span>'
+      + '<span class="person-food">' + val + '</span>'
+      + '</div>'
+      + (ingr.length ? '<div class="ingredients">'
+          + ingr.map(function(i){ return '<div class="ingredient-item"><span class="ingredient-amount">' + i.amount + '</span><span>' + i.name + '</span></div>'; }).join('')
+          + '</div>' : '')
+      + '</div>';
+  }
+  return '<div class="meal-card type-snack">'
+    + '<div class="meal-header" onclick="this.parentElement.classList.toggle(\'open\')">'
+    + '<div class="meal-icon">🎒</div>'
+    + '<div class="meal-time">'
+    + '<strong>Lunchbox <span class="opt-badge">Emanuel</span></strong>'
+    + '<div class="meal-preview">' + preview + '</div>'
+    + '</div>'
+    + '<span class="chevron">▼</span>'
+    + '</div>'
+    + '<div class="meal-body">'
+    + '<div class="meal-body-inner">'
+    + renderRow('Snack I', s1)
+    + renderRow('Snack II', s2)
+    + '</div></div></div>';
+}
+
+
+// ── Ingredients ─────────────────────────────────────────────────────────────
+const INGR = {
+  kose_julius: {
+    items: [
+      {amount:'80g',    name:'avižiniai dribsniai (nevirtų)'},
+      {amount:'200ml',  name:'pienas 2,5% rieb.'},
+      {amount:'1 vnt',  name:'bananas'},
+      {amount:'',       name:'arbata/kava be cukraus'},
+    ],
+    note: 'Gardinkite košę cinamonu, muskatu, iki 5g natūralios kakavos milteliais. Avižines krupas galite keisti: grikiais, 5 grūdų, perlinėmis kruopomis.'
+  },
+  kose_margo: {
+    items: [
+      {amount:'60g',    name:'avižiniai dribsniai (nevirtų)'},
+      {amount:'100ml',  name:'pienas 2,5% rieb.'},
+      {amount:'5g',     name:'sviestas'},
+      {amount:'7g',     name:'medus (1 arb. šaukštelis)'},
+      {amount:'',       name:'arbata/kava be cukraus'},
+    ],
+    note: 'Gardinkite košę cinamonu, muskatu, iki 5g natūralios kakavos milteliais. Avižines krupas galite keisti: grikiais, 5 grūdų, perlinėmis kruopomis.'
+  },
+  sausi_emanuel: {
+    items: [
+      {amount:'40g',   name:'sausi pusryčiai'},
+      {amount:'100ml', name:'pienas'},
+    ],
+    note: null
+  },
+  sausi_tabita: {
+    items: [
+      {amount:'30g',   name:'sausi pusryčiai'},
+      {amount:'100ml', name:'pienas'},
+    ],
+    note: null
+  },
+
+  // Kiaušiniai — weekday portions
+  kiausiniai_julius: {
+    items: [
+      {amount:'2 vnt',     name:'virti kiaušiniai'},
+      {amount:'1 šaukštas',name:'kečiupas'},
+      {amount:'50g',       name:'duona'},
+      {amount:'iki 100g',  name:'liesa mėsa'},
+      {amount:'100g',      name:'agurkas'},
+      {amount:'100g',      name:'pomidoras'},
+      {amount:'',          name:'arbata/kava be cukraus'},
+    ],
+    note: null
+  },
+  kiausiniai_margo: {
+    items: [
+      {amount:'2 vnt',   name:'virti kiaušiniai'},
+      {amount:'100g',    name:'pomidoras'},
+      {amount:'100g',    name:'agurkas'},
+      {amount:'iki 50g', name:'1 riekė tamsios duonos'},
+      {amount:'50g arba',name:'bananas arba obuolys 100g'},
+      {amount:'',        name:'arbata/kava be cukraus'},
+    ],
+    note: 'Jeigu norite kepti ant aliejaus, atsisakykite papildomo vaisiaus ir gaminkite kiaušinienę.'
+  },
+  kiausiniai_emanuel_wd: {
+    items: [
+      {amount:'1 vnt',    name:'virtas kiaušinis'},
+      {amount:'½ šaukšto',name:'kečiupas'},
+      {amount:'25g',      name:'duona'},
+      {amount:'iki 50g',  name:'liesa mėsa'},
+      {amount:'50g',      name:'agurkas'},
+      {amount:'50g',      name:'pomidoras'},
+    ],
+    note: null
+  },
+  kiausiniai_tabita_wd: {
+    items: [
+      {amount:'1 vnt',   name:'virtas kiaušinis'},
+      {amount:'50g',     name:'pomidoras'},
+      {amount:'50g',     name:'agurkas'},
+      {amount:'iki 25g', name:'1 riekė tamsios duonos'},
+      {amount:'25g arba',name:'bananas arba obuolys 50g'},
+    ],
+    note: null
+  },
+
+  // Julius morning snack — per day index (0=Mon…6=Sun)
+  snack_julius: [
+    {items:[{amount:'2 vnt',name:'obuoliai'}], note:null},                                          // Mon
+    {items:[{amount:'4 vnt',name:'sūrio lazdelės Pik-Nic'},{amount:'50ml',name:'kava su lieso pieno (0,5–1,5%)'}], note:null}, // Tue
+    {items:[{amount:'2 vnt',name:'kriaušės'}], note:null},                                          // Wed
+    {items:[{amount:'150g', name:'kumpis'},{amount:'',name:'kava/arbata'}], note:null},              // Thu
+    {items:[{amount:'2 vnt',name:'obuoliai'}], note:null},                                          // Fri
+    {items:[{amount:'4 vnt',name:'sūrio lazdelės Pik-Nic'},{amount:'50ml',name:'kava su lieso pieno (0,5–1,5%)'}], note:null}, // Sat
+    {items:[{amount:'150g', name:'kumpis'},{amount:'',name:'kava/arbata'}], note:null},              // Sun
+  ],
+
+  // Lunchbox Emanuel — weekday only (Sat/Sun = Julius morning snack)
+  lunchbox_pj: {
+    items:[
+      {amount:'2 riekės', name:'duona'},
+      {amount:'7g',       name:'uogienė be cukraus'},
+      {amount:'7g',       name:'dietinis riešutų sviestas'},
+    ],
+    note: null
+  },
+  lunchbox_berr: {
+    items:[
+      {amount:'100g', name:'agurkai arba pomidorai'},
+      {amount:'',     name:'uogos ir vaisiai pagal pasirinkimą'},
+    ],
+    note: null
+  },
+  lunchbox_cheese: {
+    items:[
+      {amount:'30g arba', name:'sūris arba 2 Pik-Nic lazdelės'},
+    ],
+    note: null
+  },
+
+  // ── Pietūs ──────────────────────────────────────────────────────────────────
+  // Mon: Vištiena
+  lunch_vistiena_julius: {
+    items:[
+      {amount:'200g',      name:'vištienos filė (pagaminto produkto)'},
+      {amount:'40g',       name:'grikiai arba perlinės kruopos (nevirtų)'},
+      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
+      {amount:'100g',      name:'agurkas'},
+      {amount:'200g',      name:'pomidoras'},
+    ],
+    note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis.'
+  },
+  lunch_vistiena_margo: {
+    items:[
+      {amount:'200g',      name:'vištienos filė (pagaminto produkto)'},
+      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
+      {amount:'100g',      name:'agurkas'},
+      {amount:'300g',      name:'pomidoras'},
+    ],
+    note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis. P.S. Lapinių daržovių – neribokite.'
+  },
+
+  // Tue: Sriuba
+  lunch_sriuba_julius: {
+    items:[
+      {amount:'300ml',  name:'sriuba (virta daržovių, kopūstienė, burokėlių – be apkeptų produktų)'},
+      {amount:'100g',   name:'pomidoras arba agurkas'},
+      {amount:'1 riekė',name:'juoda duona'},
+      {amount:'120g',   name:'baltos žuvies filė arba virtas jautienos kumpis arba virta vištiena (pagaminto produkto)'},
+    ],
+    note: 'Mėsą galite gamintis atskirai arba įsidėti į pačią sriubą.'
+  },
+  lunch_sriuba_margo: {
+    items:[
+      {amount:'300ml',  name:'sriuba (virta daržovių, kopūstienė, burokėlių – be apkeptų produktų)'},
+      {amount:'100g',   name:'pomidoras arba agurkas'},
+      {amount:'1 riekė',name:'juoda duona'},
+      {amount:'60g',    name:'baltos žuvies filė arba virtas jautienos kumpis arba virta vištiena (pagaminto produkto)'},
+    ],
+    note: 'Mėsą galite gamintis atskirai arba įsidėti į pačią sriubą.'
+  },
+
+  // Wed: Troškinys
+  lunch_troskinys_julius: {
+    items:[
+      {amount:'150g',       name:'jautienos arba kiaulienos kumpis be odos (pagaminto produkto)'},
+      {amount:'30g',        name:'rudieji ryžiai arba perlinės kruopos (nevirtų)'},
+      {amount:'300g',       name:'daržovės: pievagrybiai, pomidorai, paprikos, cukinijos, brokoliai, žiediniai kopūstai'},
+      {amount:'40g',        name:'pomidorų pasta'},
+      {amount:'2 vnt',      name:'sultinio kubeliai'},
+      {amount:'10g (1 a.š.)',name:'alyvuogių aliejus'},
+    ],
+    note: 'Gaminame troškinį iš daržovių bei jautienos kumpio. Gardiname norimais prieskoniais. Paduodame su virtais rudaisiais ryžiais arba perlinėmis, grikių, avižų kruopomis. Pačias kruopas galite įmaišyti į troškinį irgi.'
+  },
+  lunch_troskinys_margo: {
+    items:[
+      {amount:'70g',        name:'jautienos arba kiaulienos kumpis be odos (pagaminto produkto)'},
+      {amount:'15g',        name:'rudieji ryžiai arba perlinės kruopos (nevirtų)'},
+      {amount:'250g',       name:'daržovės: pievagrybiai, pomidorai, paprikos, cukinijos, brokoliai, žiediniai kopūstai'},
+      {amount:'20g',        name:'pomidorų pasta'},
+      {amount:'1 vnt',      name:'sultinio kubelis'},
+      {amount:'5g (½ a.š.)',name:'alyvuogių aliejus'},
+    ],
+    note: 'Alternatyva kruopoms: papildomai 50g mėsos. Gaminame troškinį iš daržovių bei jautienos kumpio.'
+  },
+
+  // Thu: Mėsos patiekalas
+  lunch_mesos_julius: {
+    items:[
+      {amount:'200g',      name:'vištienos šlaunelės/blauzdelės (pagaminto produkto)'},
+      {amount:'150g',      name:'bulvės virtos'},
+      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
+      {amount:'100g',      name:'agurkas'},
+      {amount:'200g',      name:'pomidoras'},
+    ],
+    note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis. Užkepkite mėsą su sūrio plutele.'
+  },
+  lunch_mesos_margo: {
+    items:[
+      {amount:'200g',      name:'vištienos šlaunelės/blauzdelės (pagaminto produkto)'},
+      {amount:'150g',      name:'bulvės virtos'},
+      {amount:'15g (1 š.)',name:'alyvuogių aliejus'},
+      {amount:'100g',      name:'agurkas'},
+      {amount:'200g',      name:'pomidoras'},
+    ],
+    note: 'Mėsą galite rinktis kokią norite: krūtinėlė, šlaunelės, blauzdelės, jautienos filė, kumpis. Užkepkite mėsą su sūrio plutele.'
+  },
+};
+
+// ── Varškė ingredients ──────────────────────────────────────────────────────
+const VARSKE_INGR = {
+  // Breakfast Varškė — Julius (+ Jogurtas su uogomis side)
+  breakfast_julius: {
+    items:[
+      {amount:'200g',      name:'liesa varškė (0,5%)'},
+      {amount:'10g',       name:'sėklos/riešutai'},
+      {amount:'1 šaukšt.', name:'uogienė'},
+      {amount:'',          name:'arbata/kava be cukraus'},
+      {amount:'— taip pat —', name:''},
+      {amount:'200g',      name:'graikiškas jogurtas (3–4%)'},
+      {amount:'150g',      name:'uogos'},
+      {amount:'50g',       name:'sausi pusryčiai Kellogs (ne Granola)'},
+    ],
+    note: 'Uogos: braškės, avietės, žemuogės, serbentai, agrastai, mėlynės. Taip pat tinka: obuolys, kiviai, persikai, abrikosai. Jeigu imsi Granola — sumažink iki 30g.'
+  },
+  // Jogurtas+ = Jogurtas su uogomis — all same portion
+  jogurtas_uogos: {
+    items:[
+      {amount:'200g', name:'graikiškas jogurtas (3–4%)'},
+      {amount:'150g', name:'uogos'},
+      {amount:'50g',  name:'sausi pusryčiai Kellogs (ne Granola)'},
+      {amount:'',     name:'arbata/kava be cukraus'},
+    ],
+    note: 'Uogos: braškės, avietės, žemuogės, serbentai, agrastai, mėlynės. Taip pat tinka: obuolys, kiviai, persikai, abrikosai. Jeigu imsi Granola — sumažink iki 30g.'
+  },
+
+  // Breakfast Varškė — Margo
+  breakfast_margo: {
+    items:[
+      {amount:'200g',      name:'liesa varškė (0,5%)'},
+      {amount:'10g',       name:'sėklos/riešutai'},
+      {amount:'1 šaukšt.', name:'uogienė'},
+      {amount:'',          name:'arbata/kava be cukraus'},
+    ],
+    note: 'Riešutai: visi tinkami.'
+  },
+  // Snack Varškė — Julius (Tue/Thu)
+  snack_julius: {
+    items:[
+      {amount:'200g',      name:'liesa varškė (0,5%)'},
+      {amount:'1 vnt',     name:'vaisius'},
+      {amount:'3 vnt',     name:'ryžių trapučiai'},
+      {amount:'1 šaukšt.', name:'uogienė'},
+    ],
+    note: null
+  },
+  // Snack Vaškė — Margo (Tue) / varškė su vaisiais
+  snack_margo: {
+    items:[
+      {amount:'200g',  name:'liesa varškė (0,5%)'},
+      {amount:'200g',  name:'vaisius'},
+      {amount:'2 vnt', name:'ryžių trapučiai'},
+    ],
+    note: null
+  },
+  // G. varškė — Margo Thu/Sun, Tabita Sun
+  g_varske: {
+    items:[
+      {amount:'100g',      name:'grūdėta varškė (5%)'},
+      {amount:'1 šaukšt.', name:'medus'},
+      {amount:'',          name:'arbata/kava be cukraus'},
+    ],
+    note: null
+  },
+  // Dinner Varškė — Julius & Margo Wed (with trapučiai)
+  dinner_julius: {
+    items:[
+      {amount:'200g',      name:'liesa varškė (0,5%)'},
+      {amount:'1 vnt',     name:'vaisius'},
+      {amount:'3 vnt',     name:'ryžių trapučiai'},
+      {amount:'1 šaukšt.', name:'uogienė'},
+    ],
+    note: null
+  },
+  dinner_margo: {
+    items:[
+      {amount:'200g',  name:'liesa varškė (0,5%)'},
+      {amount:'200g',  name:'vaisius'},
+      {amount:'2 vnt', name:'ryžių trapučiai'},
+    ],
+    note: null
+  },
+};
+
+// ── Dinner ingredients ──────────────────────────────────────────────────────
+const DINNER_INGR = {
+  sumustiniai_julius: {
+    items:[
+      {amount:'2 riekės', name:'sumuštinių duona (ruginė) arba 6 ryžių trapučiai'},
+      {amount:'50g',      name:'avokadas'},
+      {amount:'50g',      name:'rūkyta lašiša'},
+      {amount:'100g',     name:'pomidoras arba agurkas 200g'},
+    ],
+    note: 'Vietoje duonos galite padidinti mėsos/lašišos kiekį (+100g papildomai).'
+  },
+  sumustiniai_margo: {
+    items:[
+      {amount:'2 riekės', name:'sumuštinių duona (ruginė) arba 6 ryžių trapučiai'},
+      {amount:'30g',      name:'avokadas'},
+      {amount:'50g',      name:'rūkyta lašiša'},
+      {amount:'100g',     name:'pomidoras arba agurkas 200g'},
+    ],
+    note: 'Vietoje duonos galite padidinti mėsos/lašišos kiekį (+100g papildomai).'
+  },
+  sumustiniai_emanuel: {
+    items:[
+      {amount:'2 riekės', name:'sumuštinių duona (ruginė) arba 6 ryžių trapučiai'},
+      {amount:'50g',      name:'avokadas'},
+      {amount:'50g',      name:'rūkyta lašiša (neprivaloma)'},
+      {amount:'100g',     name:'pomidoras arba agurkas 200g'},
+    ],
+    note: null
+  },
+  sumustiniai_breakfast_margo: {
+    items:[
+      {amount:'60g',     name:'viso grūdų ruginė duona'},
+      {amount:'30g',     name:'avokadas'},
+      {amount:'40g',     name:'jautienos arba kiaulienos kumpis'},
+      {amount:'100g',    name:'agurkas'},
+      {amount:'100g',    name:'pomidoras'},
+      {amount:'',        name:'arbata/kava be cukraus'},
+    ],
+    note: null
+  },
+  sumustiniai_tabita: {
+    items:[
+      {amount:'2 riekės', name:'sumuštinių duona (ruginė) arba 6 ryžių trapučiai'},
+      {amount:'30g',      name:'avokadas'},
+      {amount:'50g',      name:'rūkyta lašiša (neprivaloma)'},
+      {amount:'100g',     name:'pomidoras arba agurkas 200g'},
+    ],
+    note: null
+  },
+  salotos_fri: {
+    items:[
+      {amount:'100g', name:'bulvės fri'},
+    ],
+    note: null
+  },
+  nuggets: {
+    items:[
+      {amount:'6 vnt.', name:'Nuggets'},
+    ],
+    note: null
+  },
+  salotos: {
+    items:[
+      {amount:'200g',    name:'baltos žuvies filė arba vištienos/kalakutienos filė, jautienos antrekotas (pagaminto produkto)'},
+      {amount:'iki 400g',name:'daržovės'},
+      {amount:'15g',     name:'aliejus'},
+    ],
+    note: null
+  },
+};
+
+function dinnerIngr(val, person) {
+  if (val === 'Sumuštiniai') {
+    if (person === 'julius')  return {i: DINNER_INGR.sumustiniai_julius.items,  n: DINNER_INGR.sumustiniai_julius.note};
+    if (person === 'margo')   return {i: DINNER_INGR.sumustiniai_margo.items,   n: DINNER_INGR.sumustiniai_margo.note};
+    if (person === 'emanuel') return {i: DINNER_INGR.sumustiniai_emanuel.items, n: null};
+    if (person === 'tabita')  return {i: DINNER_INGR.sumustiniai_tabita.items,  n: null};
+  }
+  if (val === 'Varškė') {
+    return person === 'julius' || person === 'emanuel'
+      ? {i: VARSKE_INGR.dinner_julius.items, n: null}
+      : {i: VARSKE_INGR.dinner_margo.items,  n: null};
+  }
+  if (val === 'Salotos' || val === 'Slts') return {i: DINNER_INGR.salotos.items, n: null};
+  if (val === 'Salotos+FRI') return {i: [...DINNER_INGR.salotos.items, ...DINNER_INGR.salotos_fri.items], n: null};
+  if (val === 'Nuggets+Slts') return {i: [...DINNER_INGR.nuggets.items, ...DINNER_INGR.salotos.items], n: null};
+  return {i:[], n:null};
+}
+
+// ── Snack / Evening snack ingredients ───────────────────────────────────────
+const SNACK_INGR = {
+  kumpis_full: {
+    items:[
+      {amount:'150g', name:'kumpis'},
+      {amount:'',     name:'arbata/kava'},
+    ],
+    note: 'Kabanosai arba kita mėsa — neprivalomas pasirinkimas.'
+  },
+  kumpis_half: {
+    items:[
+      {amount:'75g', name:'kumpis'},
+    ],
+    note: 'Kabanosai arba kita mėsa — neprivalomas pasirinkimas.'
+  },
+  jogurtas: {
+    items:[
+      {amount:'2 indeliai', name:'jogurtas'},
+      {amount:'1 šaukštas', name:'sėklos pagal pasirinkimą'},
+    ],
+    note: 'Arba jogurtas su saujelė norimo uogų.'
+  },
+  belvita_julius: {
+    items:[{amount:'4 vnt.', name:'Belvita'}],
+    note: null
+  },
+  belvita_kids: {
+    items:[{amount:'2 vnt.', name:'Belvita'}],
+    note: null
+  },
+};
+
+function snackIngr(val, person) {
+  if (val === 'Kumpis') {
+    return person === 'tabita'
+      ? {i: SNACK_INGR.kumpis_half.items, n: SNACK_INGR.kumpis_half.note}
+      : {i: SNACK_INGR.kumpis_full.items, n: SNACK_INGR.kumpis_full.note};
+  }
+  if (val === 'Jogurtas') return {i: SNACK_INGR.jogurtas.items, n: SNACK_INGR.jogurtas.note};
+  if (val && val.startsWith('Belvita')) {
+    return person === 'julius'
+      ? {i: SNACK_INGR.belvita_julius.items, n: null}
+      : {i: SNACK_INGR.belvita_kids.items,   n: null};
+  }
+  if (val === 'Varškė') return {i: VARSKE_INGR.snack_julius.items, n: null};
+  if (val === 'Vaškė')  return {i: VARSKE_INGR.snack_margo.items,  n: null};
+  if (val === 'G. varškė') return {i: VARSKE_INGR.g_varske.items, n: VARSKE_INGR.g_varske.note};
+  return {i:[], n:null};
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function renderMenu() {
+  const di = dayIdx(selected);
+  const isToday = isoDate(selected) === isoDate(new Date());
+
+  document.getElementById('day-heading').textContent = isoDate(selected) + ' — ' + DAYS_FULL[di];
+  document.getElementById('today-label').textContent = isToday ? 'Šiandien' : '';
+
+  const J = DATA.julius, M = DATA.margo, E = DATA.emanuel, T = DATA.tabita;
+
+  document.getElementById('menu-area').innerHTML = `
+    <div class="group-label">Visa šeima</div>
+
+    ${(() => {
+      const isWeekend = di >= 5;
+      function bIngr(val, person) {
+        if (val === 'Košė') {
+          return person === 'julius' ? {i: INGR.kose_julius.items, n: INGR.kose_julius.note}
+                                     : {i: INGR.kose_margo.items,  n: INGR.kose_margo.note};
+        }
+        if (val === 'Sausi p.') {
+          return person === 'emanuel' ? {i: INGR.sausi_emanuel.items, n: null}
+                                      : {i: INGR.sausi_tabita.items,  n: null};
+        }
+        if (val === 'Kaiušiniai' || val === 'Kiaušiniai') {
+          if (person === 'julius')  return {i: INGR.kiausiniai_julius.items,  n: INGR.kiausiniai_julius.note};
+          if (person === 'margo')   return {i: INGR.kiausiniai_margo.items,   n: INGR.kiausiniai_margo.note};
+          if (person === 'emanuel') return {i: isWeekend ? INGR.kiausiniai_julius.items : INGR.kiausiniai_emanuel_wd.items, n: null};
+          if (person === 'tabita')  return {i: isWeekend ? INGR.kiausiniai_margo.items  : INGR.kiausiniai_tabita_wd.items,  n: isWeekend ? INGR.kiausiniai_margo.note : null};
+        }
+        if (val === 'Varškė') {
+          return person === 'julius'
+            ? {i: VARSKE_INGR.breakfast_julius.items, n: VARSKE_INGR.breakfast_julius.note}
+            : {i: VARSKE_INGR.breakfast_margo.items,  n: VARSKE_INGR.breakfast_margo.note};
+        }
+        if (val === 'Jogurtas+') return {i: VARSKE_INGR.jogurtas_uogos.items, n: VARSKE_INGR.jogurtas_uogos.note};
+        if (val === 'Sumuštiniai') {
+          if (person === 'margo') return {i: DINNER_INGR.sumustiniai_breakfast_margo.items, n: null};
+          const r = dinnerIngr(val, person);
+          return {i: r.i, n: r.n};
+        }
+        return {i: [], n: null};
+      }
+      const jb = bIngr(J.breakfast[di], 'julius');
+      const mb = bIngr(M.breakfast[di], 'margo');
+      const eb = bIngr(E.breakfast[di], 'emanuel');
+      const tb = bIngr(T.breakfast[di], 'tabita');
+      return card({ type:'breakfast', icon:'🌅', label:'Pusryčiai', persons:[
+        {name:'Julius',  value: J.breakfast[di], ingredients: jb.i, note: jb.n},
+        {name:'Margo',   value: M.breakfast[di], ingredients: mb.i, note: mb.n},
+        {name:'Emanuel', value: E.breakfast[di], ingredients: eb.i, note: eb.n},
+        {name:'Tabita',  value: T.breakfast[di], ingredients: tb.i, note: tb.n},
+      ]});
+    })()}
+
+    ${(() => {
+      const js = INGR.snack_julius[di];
+      if (di >= 5) {
+        // Weekend: Julius + Emanuel together, no lunchbox
+        const es1 = E.snackI ? E.snackI[di] : null;
+        return card({ type:'snack', icon:'🍎', label:'Snack rytas', optional:true, persons:[
+          {name:'Julius',  value: J.morningSnack[di], ingredients: js.items, note: js.note},
+          {name:'Emanuel', value: es1, ingredients: js.items, note: js.note},
+        ]});
+      } else {
+        // Weekday: Julius snack rytas separate, then lunchbox for Emanuel
+        return `${card({ type:'snack', icon:'🍎', label:'Snack rytas', optional:true, persons:[
+          {name:'Julius', value: J.morningSnack[di], ingredients: js.items, note: js.note},
+        ]})}
+        ${lunchboxCard({ di, E })}`;
+      }
+    })()}
+
+    ${(() => {
+      function lIngr(val, person) {
+        const p = person === 'julius';
+        if (val === 'Vištiena')   return {i: p ? INGR.lunch_vistiena_julius.items : INGR.lunch_vistiena_margo.items, n: p ? INGR.lunch_vistiena_julius.note : INGR.lunch_vistiena_margo.note};
+        if (val === 'Sriuba')     return {i: p ? INGR.lunch_sriuba_julius.items   : INGR.lunch_sriuba_margo.items,   n: INGR.lunch_sriuba_julius.note};
+        if (val === 'Troškinys')  return {i: p ? INGR.lunch_troskinys_julius.items: INGR.lunch_troskinys_margo.items,n: p ? INGR.lunch_troskinys_julius.note : INGR.lunch_troskinys_margo.note};
+        if (val === 'Mėsos pat.') return {i: p ? INGR.lunch_mesos_julius.items    : INGR.lunch_mesos_margo.items,   n: INGR.lunch_mesos_julius.note};
+        if (val === 'Salotos') return {i: DINNER_INGR.salotos.items, n: null};
+        return {i:[], n:null};
+      }
+      const jl = lIngr(J.lunch[di], 'julius');
+      const ml = lIngr(M.lunch[di], 'margo');
+      const persons = [
+        {name:'Julius', value: J.lunch[di], ingredients: jl.i, note: jl.n},
+        {name:'Margo',  value: M.lunch[di], ingredients: ml.i, note: ml.n},
+      ];
+      if (di >= 5) {
+        // Saturday: Sriuba — Emanuel=Julius portions, Tabita=Margo portions
+        // Sunday: Troškinys — Emanuel=Julius portions, Tabita=Margo portions
+        const el = lIngr(E.lunch[di], 'julius');
+        const tl = lIngr(T.lunch[di], 'margo');
+        persons.push({name:'Emanuel', value: E.lunch[di], ingredients: el.i, note: el.n});
+        persons.push({name:'Tabita',  value: T.lunch[di], ingredients: tl.i, note: tl.n});
+      }
+      return card({ type:'lunch', icon:'🥗', label:'Pietūs', persons});
+    })()}
+
+    ${(() => {
+      function sp(val, person) { const r = snackIngr(val, person); return {ingredients:r.i, note:r.n}; }
+      return card({ type:'snack', icon:'🧀', label:'Snack', persons:[
+        {name:'Julius',  value: J.snack[di], ...sp(J.snack[di], 'julius')},
+        {name:'Margo',   value: M.snack[di], ...sp(M.snack[di], 'margo')},
+        {name:'Emanuel', value: E.snack[di], ...sp(E.snack[di], 'emanuel')},
+        {name:'Tabita',  value: T.snack[di], ...sp(T.snack[di], 'tabita')},
+      ]});
+    })()}
+
+    ${(() => {
+      function dp(val, person) { const r = dinnerIngr(val, person); return {ingredients:r.i, note:r.n}; }
+      return card({ type:'dinner', icon:'🌙', label:'Vakarienė', persons:[
+        {name:'Julius',  value: J.dinner[di], ...dp(J.dinner[di], 'julius')},
+        {name:'Margo',   value: M.dinner[di], ...dp(M.dinner[di], 'margo')},
+        {name:'Emanuel', value: E.dinner[di], ...dp(E.dinner[di], 'emanuel')},
+        {name:'Tabita',  value: T.dinner[di], ...dp(T.dinner[di], 'tabita')},
+      ]});
+    })()}
+
+    ${(() => {
+      function ep(val, person) { if (!val) return {ingredients:[], note:null}; const r = snackIngr(val, person); return {ingredients:r.i, note:r.n}; }
+      const jv = J.eveningSnack ? J.eveningSnack[di] : null;
+      const ev = E.eveningSnack ? E.eveningSnack[di] : null;
+      const tv = T.eveningSnack ? T.eveningSnack[di] : null;
+      return card({ type:'optional', icon:'🌛', label:'Snack vakaras', optional:true, persons:[
+        {name:'Julius',  value: jv, ...ep(jv, 'julius')},
+        {name:'Emanuel', value: ev, ...ep(ev, 'emanuel')},
+        {name:'Tabita',  value: tv, ...ep(tv, 'tabita')},
+      ]});
+    })()}
+  `;
+}
+
+buildStrip();
+renderMenu();
+</script>
+</body>
+</html>
