@@ -306,6 +306,112 @@
     opacity: 0.6;
   }
   #logout-btn:hover { opacity: 1; }
+
+  /* ── Shopping list ──────────────────────────────────────────────────────────── */
+  #shop-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #fff;
+    opacity: 0.75;
+    padding: 4px 8px;
+    border-radius: 8px;
+    line-height: 1;
+    transition: opacity .18s, background .18s;
+    flex: 0 0 auto;
+  }
+  #shop-btn:hover, #shop-btn.active { opacity: 1; background: rgba(255,255,255,0.15); }
+
+  .shop-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .shop-nav-btn {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .18s;
+    flex: 0 0 auto;
+  }
+  .shop-nav-btn:hover { border-color: var(--accent); }
+  .shop-nav-label {
+    flex: 1;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .shop-category { margin-bottom: 20px; }
+  .shop-cat-header {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+  .shop-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 14px;
+    background: var(--card);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: opacity .18s;
+    user-select: none;
+  }
+  .shop-item input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .shop-item-amount {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .shop-item-name {
+    font-size: 0.88rem;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .shop-item.done { opacity: 0.4; }
+  .shop-item.done .shop-item-name { text-decoration: line-through; }
+
+  #shop-clear {
+    display: block;
+    margin: 8px auto 24px;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 0.6;
+  }
+  #shop-clear:hover { opacity: 1; }
   </style>
 </head>
 <body>
@@ -323,6 +429,7 @@
 <header>
   <h1>🍽 Šeimos Meniu</h1>
   <span id="today-label"></span>
+  <button id="shop-btn" title="Pirkinių sąrašas">🛒</button>
 </header>
 
 <div class="week-strip" id="week-strip"></div>
@@ -330,6 +437,11 @@
 <main>
   <p class="day-heading" id="day-heading"></p>
   <div id="menu-area"></div>
+  <div id="shop-view" style="display:none">
+    <p class="day-heading" id="shop-date-label"></p>
+    <div id="shop-list"></div>
+    <button id="shop-clear">Išvalyti visus ✓</button>
+  </div>
 </main>
 
 <button id="logout-btn" onclick="logout()">Atsijungti</button>
@@ -446,7 +558,7 @@ function buildStrip() {
     if (ds === isoDate(selected)) btn.classList.add('active');
 
     btn.innerHTML = `<span class="abbr">${DAYS_LT[i]}</span>`;
-    btn.addEventListener('click', () => { selected = new Date(d); buildStrip(); renderMenu(); });
+    btn.addEventListener('click', () => { selected = new Date(d); buildStrip(); renderMenu(); if (shopVisible) renderShop(); });
     strip.appendChild(btn);
   }
 }
@@ -917,6 +1029,23 @@ const DINNER_INGR = {
     ],
     note: null
   },
+  vynas_snack: {
+    items:[
+      {amount:'150–200g', name:'sūris (Brie, Gouda arba mėgstamas)'},
+      {amount:'80g',      name:'kumpis arba rūkyta mėsa'},
+      {amount:'100g',     name:'vynuogės arba vaisiai'},
+      {amount:'6–8 vnt.', name:'krekeriai arba ryžių trapučiai'},
+    ],
+    note: 'Neformali vakarienė. Kiekiai laisvi — pagal apetitą.'
+  },
+  snacks_rinkinys: {
+    items:[
+      {amount:'1 vnt.',  name:'vaisius (obuolys arba bananas)'},
+      {amount:'1 vnt.',  name:'varškės sūrelis'},
+      {amount:'2 vnt.',  name:'ryžių trapučiai'},
+    ],
+    note: null
+  },
 };
 
 function dinnerIngr(val, person) {
@@ -934,6 +1063,8 @@ function dinnerIngr(val, person) {
   if (val === 'Salotos' || val === 'Slts') return {i: DINNER_INGR.salotos.items, n: null};
   if (val === 'Salotos+FRI') return {i: [...DINNER_INGR.salotos.items, ...DINNER_INGR.salotos_fri.items], n: null};
   if (val === 'Nuggets+Salotos') return {i: [...DINNER_INGR.nuggets.items, ...DINNER_INGR.salotos.items], n: null};
+  if (val === 'Vynas ir snack')  return {i: DINNER_INGR.vynas_snack.items,    n: DINNER_INGR.vynas_snack.note};
+  if (val === 'Snacks rinkinys') return {i: DINNER_INGR.snacks_rinkinys.items, n: null};
   return {i:[], n:null};
 }
 
@@ -967,6 +1098,33 @@ const SNACK_INGR = {
     items:[{amount:'2 vnt.', name:'Belvita'}],
     note: null
   },
+  vaisiai_riesutai: {
+    items:[
+      {amount:'1–2 vnt.', name:'sezoninis vaisius (obuolys, kriaušė, bananas)'},
+      {amount:'30g',      name:'riešutai (migdolai, graikiniai arba anakardžiai)'},
+    ], note: null
+  },
+  suris: {
+    items:[
+      {amount:'30g', name:'sūris arba 2 Pik-Nic lazdelės'},
+    ], note: null
+  },
+  jogurtukai: {
+    items:[
+      {amount:'2 vnt.', name:'mažas jogurtukas (pvz. Activia, Danone, 150g)'},
+    ], note: null
+  },
+  vaisiu_surelis: {
+    items:[
+      {amount:'1 vnt.', name:'vaisius (bananas arba obuolys)'},
+      {amount:'1 vnt.', name:'varškės sūrelis (pvz. Dvaro, Žalmargė)'},
+    ], note: null
+  },
+  riesutai: {
+    items:[
+      {amount:'30g', name:'riešutai (migdolai, graikiniai, anakardžiai – mišinys)'},
+    ], note: null
+  },
 };
 
 function snackIngr(val, person) {
@@ -977,13 +1135,18 @@ function snackIngr(val, person) {
   }
   if (val === 'Jogurtas') return {i: SNACK_INGR.jogurtas.items, n: SNACK_INGR.jogurtas.note};
   if (val && val.startsWith('Belvita')) {
-    return person === 'julius'
-      ? {i: SNACK_INGR.belvita_julius.items, n: null}
-      : {i: SNACK_INGR.belvita_kids.items,   n: null};
+    var base = person === 'julius' ? SNACK_INGR.belvita_julius.items : SNACK_INGR.belvita_kids.items;
+    if (val === 'Belvita+Banana') return {i: base.concat([{amount:'1 vnt.', name:'bananas'}]), n: null};
+    return {i: base, n: null};
   }
   if (val === 'Varškė') return {i: VARSKE_INGR.snack_julius.items, n: null};
   if (val === 'Vaškė')  return {i: VARSKE_INGR.snack_margo.items,  n: null};
   if (val === 'G. varškė') return {i: VARSKE_INGR.g_varske.items, n: VARSKE_INGR.g_varske.note};
+  if (val === 'Vais. ir riešutai') return {i: SNACK_INGR.vaisiai_riesutai.items, n: null};
+  if (val === 'Sūris')             return {i: SNACK_INGR.suris.items, n: null};
+  if (val === '2 jogurtukai')      return {i: SNACK_INGR.jogurtukai.items, n: null};
+  if (val === 'Vaisiu+Surelis')    return {i: SNACK_INGR.vaisiu_surelis.items, n: null};
+  if (val === 'Riešutai')          return {i: SNACK_INGR.riesutai.items, n: null};
   return {i:[], n:null};
 }
 
@@ -1122,6 +1285,174 @@ function renderMenu() {
   `;
 }
 
+// ── Shopping list ─────────────────────────────────────────────────────────────
+
+function shopBreakfastIngr(val, person, isWeekend) {
+  if (!val) return [];
+  if (val === 'Košė') return person === 'julius' ? INGR.kose_julius.items : INGR.kose_margo.items;
+  if (val === 'Sausi p.') return person === 'emanuel' ? INGR.sausi_emanuel.items : INGR.sausi_tabita.items;
+  if (val === 'Kaiušiniai' || val === 'Kiaušiniai') {
+    if (person === 'julius')  return INGR.kiausiniai_julius.items;
+    if (person === 'margo')   return INGR.kiausiniai_margo.items;
+    if (person === 'emanuel') return isWeekend ? INGR.kiausiniai_julius.items : INGR.kiausiniai_emanuel_wd.items;
+    if (person === 'tabita')  return isWeekend ? INGR.kiausiniai_margo.items  : INGR.kiausiniai_tabita_wd.items;
+  }
+  if (val === 'Varškė') return person === 'julius' ? VARSKE_INGR.breakfast_julius.items : VARSKE_INGR.breakfast_margo.items;
+  if (val === 'Jogurtas+') return VARSKE_INGR.jogurtas_uogos.items;
+  if (val === 'Sumuštiniai') {
+    if (person === 'margo') return DINNER_INGR.sumustiniai_breakfast_margo.items;
+    return dinnerIngr(val, person).i;
+  }
+  return [];
+}
+
+function shopLunchIngr(val, person) {
+  if (!val) return [];
+  const p = person === 'julius';
+  if (val === 'Vištiena')    return p ? INGR.lunch_vistiena_julius.items : INGR.lunch_vistiena_margo.items;
+  if (val === 'Sriuba')      return p ? INGR.lunch_sriuba_julius.items   : INGR.lunch_sriuba_margo.items;
+  if (val === 'Troškinys')   return p ? INGR.lunch_troskinys_julius.items: INGR.lunch_troskinys_margo.items;
+  if (val === 'Mėsos pat.')  return p ? INGR.lunch_mesos_julius.items    : INGR.lunch_mesos_margo.items;
+  if (val === 'Kepta žuvis') return p ? INGR.lunch_zuvis_julius.items    : INGR.lunch_zuvis_margo.items;
+  if (val === 'Salotos')     return DINNER_INGR.salotos.items;
+  return [];
+}
+
+function collectIngredients(di) {
+  const J = DATA.julius, M = DATA.margo, E = DATA.emanuel, T = DATA.tabita;
+  const isWeekend = di >= 5;
+  const items = [];
+  function add(arr, meal) { if (arr && arr.length) arr.forEach(function(i) { items.push({amount: i.amount, name: i.name, meal: meal}); }); }
+
+  // Breakfast
+  add(shopBreakfastIngr(J.breakfast[di], 'julius', isWeekend), 'breakfast');
+  add(shopBreakfastIngr(M.breakfast[di], 'margo', isWeekend), 'breakfast');
+  add(shopBreakfastIngr(E.breakfast[di], 'emanuel', isWeekend), 'breakfast');
+  add(shopBreakfastIngr(T.breakfast[di], 'tabita', isWeekend), 'breakfast');
+
+  // Morning snack Julius + Emanuel lunchbox (weekdays)
+  var js = INGR.snack_julius[di];
+  if (js) add(js.items, 'morning');
+  if (!isWeekend) {
+    if (E.snackI && E.snackI[di])  add(lunchboxIngr(E.snackI[di]), 'morning');
+    if (E.snackII && E.snackII[di]) add(lunchboxIngr(E.snackII[di]), 'morning');
+  }
+
+  // Lunch
+  add(shopLunchIngr(J.lunch[di], 'julius'), 'lunch');
+  add(shopLunchIngr(M.lunch[di], 'margo'), 'lunch');
+  if (isWeekend) {
+    add(shopLunchIngr(E.lunch[di], 'julius'), 'lunch');
+    add(shopLunchIngr(T.lunch[di], 'margo'), 'lunch');
+  }
+
+  // Snack
+  [[J.snack[di],'julius'],[M.snack[di],'margo'],[E.snack[di],'emanuel'],[T.snack[di],'tabita']].forEach(function(pair) {
+    add(snackIngr(pair[0], pair[1]).i, 'snack');
+  });
+
+  // Dinner
+  [[J.dinner[di],'julius'],[M.dinner[di],di===3?'emanuel':'margo'],[E.dinner[di],'emanuel'],[T.dinner[di],'tabita']].forEach(function(pair) {
+    if (pair[0]) add(dinnerIngr(pair[0], pair[1]).i, 'dinner');
+  });
+
+  // Evening snack
+  var evSnacks = [
+    [J.eveningSnack ? J.eveningSnack[di] : null, 'julius'],
+    [E.eveningSnack ? E.eveningSnack[di] : null, 'emanuel'],
+    [T.eveningSnack ? T.eveningSnack[di] : null, 'tabita'],
+  ];
+  evSnacks.forEach(function(pair) { if (pair[0]) add(snackIngr(pair[0], pair[1]).i, 'evening'); });
+
+  return items;
+}
+
+function dedupIngredients(items) {
+  var map = {};
+  items.forEach(function(item) {
+    var key = item.name;
+    if (!map[key]) map[key] = {name: item.name, amounts: []};
+    var a = item.amount ? item.amount.trim() : '';
+    if (a && map[key].amounts.indexOf(a) === -1) map[key].amounts.push(a);
+  });
+  return Object.values(map);
+}
+
+var MEAL_CATS = [
+  {key:'breakfast', label:'🌅 Pusryčiai'},
+  {key:'morning',   label:'🍎 Snack rytas'},
+  {key:'lunch',     label:'🥗 Pietūs'},
+  {key:'snack',     label:'🧀 Snack'},
+  {key:'dinner',    label:'🌙 Vakarienė'},
+  {key:'evening',   label:'🌛 Snack vakaras'},
+];
+
+var shopVisible = false;
+
+function shopTarget() { var d = new Date(selected); d.setDate(d.getDate() + 1); return d; }
+function shopDayKey() { return 'shop_' + isoDate(shopTarget()); }
+
+function renderShop() {
+  var target = shopTarget();
+  var di = dayIdx(target);
+  var rawItems = collectIngredients(di);
+  var checked = JSON.parse(localStorage.getItem(shopDayKey()) || '{}');
+
+  var grouped = {};
+  MEAL_CATS.forEach(function(c) { grouped[c.key] = []; });
+  rawItems.forEach(function(item) { grouped[item.meal].push(item); });
+  MEAL_CATS.forEach(function(cat) { grouped[cat.key] = dedupIngredients(grouped[cat.key]); });
+
+  document.getElementById('shop-date-label').textContent = isoDate(target) + ' — ' + DAYS_FULL[di];
+
+  var html = '';
+  MEAL_CATS.forEach(function(cat) {
+    var group = grouped[cat.key];
+    if (!group.length) return;
+    html += '<div class="shop-category"><div class="shop-cat-header">' + cat.label + '</div>';
+    group.forEach(function(item) {
+      var key = cat.key + ':' + item.name;
+      var done = !!checked[key];
+      var escapedKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var amountHtml = item.amounts.length ? '<div class="shop-item-amount">' + item.amounts.join(' + ') + '</div>' : '';
+      html += '<div class="shop-item' + (done ? ' done' : '') + '" onclick="toggleShopItem(this,\'' + escapedKey + '\')">'
+        + '<input type="checkbox"' + (done ? ' checked' : '') + ' onclick="event.stopPropagation();toggleShopItem(this.parentElement,\'' + escapedKey + '\')">'
+        + '<div>' + amountHtml + '<div class="shop-item-name">' + item.name + '</div></div>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('shop-list').innerHTML = html;
+}
+
+function toggleShopItem(el, name) {
+  var checked = JSON.parse(localStorage.getItem(shopDayKey()) || '{}');
+  var isDone = el.classList.contains('done');
+  if (isDone) {
+    delete checked[name];
+    el.classList.remove('done');
+    el.querySelector('input').checked = false;
+  } else {
+    checked[name] = 1;
+    el.classList.add('done');
+    el.querySelector('input').checked = true;
+  }
+  localStorage.setItem(shopDayKey(), JSON.stringify(checked));
+}
+
+document.getElementById('shop-btn').addEventListener('click', function() {
+  shopVisible = !shopVisible;
+  this.classList.toggle('active', shopVisible);
+  document.getElementById('shop-view').style.display = shopVisible ? 'block' : 'none';
+  document.getElementById('menu-area').style.display = shopVisible ? 'none' : 'block';
+  document.getElementById('day-heading').style.display = shopVisible ? 'none' : '';
+  if (shopVisible) renderShop();
+});
+document.getElementById('shop-clear').addEventListener('click', function() {
+  localStorage.removeItem(shopDayKey()); renderShop();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 buildStrip();
 renderMenu();
 </script>
